@@ -2,6 +2,7 @@ package date
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"encoding/gob"
 	"encoding/json"
 )
@@ -11,6 +12,7 @@ type Packege struct {
 	From  string
 	Title string
 	Name  string
+	PublicKey rsa.PublicKey
 	Type  string
 	Date  []byte
 }
@@ -22,13 +24,19 @@ type HandShake struct { //Информация о узлах при рукопо
 
 type Node struct { //Узел адрес|Имя
 	Address string
+	PublicKey rsa.PublicKey
 	Name    string
 }
 
-func HandShakeToJson(nodes map[string]string, status bool) ([]byte, error) {
+type NodeInfo struct {
+	Name      string
+	PublicKey rsa.PublicKey
+}
+
+func HandShakeToJson(nodes map[string]*NodeInfo, status bool) ([]byte, error) {
 	var handShake = HandShake{} //Создание списка адресов для рукопожатия
 	for addr := range nodes {
-		handShake.Nodes = append(handShake.Nodes, Node{Address: addr, Name: nodes[addr]})
+		handShake.Nodes = append(handShake.Nodes, Node{Address: addr, Name: nodes[addr].Name, PublicKey: nodes[addr].PublicKey})
 	}
 	handShake.Status = status
 

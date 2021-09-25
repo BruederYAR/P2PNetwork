@@ -47,34 +47,40 @@ func handleConnection(node *Node, conn net.Conn) { //Читаем данные
 		return
 	}
 
-	node.ConnectTo([]string{pack.From}, pack.Name) //записываем того, кто отослал данные
+	node.ConnectTo([]string{pack.From}, pack.Name, pack.PublicKey) //записываем того, кто отослал данные
 
+	WorkingWithData(node, pack)
+}
+
+func WorkingWithData(node *Node, pack date.Packege){
 	switch pack.Title {
-	case node.Titles[1]: //date
-		switch pack.Type {
-		case node.Types[0]:
-			fmt.Println(string(pack.Date)) //Выводим данные
-
-			if string(pack.Date)[0] == '/' {
-				message := node.Input.CommandExecute(string(pack.Date))
-				node.SendMessageTo(pack.From, message)
+		case node.Titles[1]: //date
+			switch pack.Type {
+			case node.Types[0]:
+				message := date.RSA_OAEP_Decrypt(pack.Date, node.PrivateKey)
+				fmt.Println(string(message)) //Выводим данные
+	
+				if string(message)[0] == '/' {
+					message := node.Input.CommandExecute(string(message))
+					node.SendMessageTo(pack.From, []byte(message))
+				}
+			}
+	
+		case node.Titles[0]: //Рукопожатие handshake
+			var handShake date.HandShake
+			json.Unmarshal(pack.Date, &handShake) //Забираем список узлов
+	
+			if handShake.Status { //Если начало рукопожатия
+				node.HandShake(pack.From, false) //Отправляем узлы обратно
+			}
+	
+			for _, local_node := range handShake.Nodes { //Добавляем узлы в локальные список
+				if node.Connections[local_node.Address] != nil && local_node.Name != node.Name { //Если узел, который нам прислали был не известен, то выполняем рукопожатие с ним
+					node.HandShake(local_node.Address, true)
+				}
+	
+				node.Connections[local_node.Address] = &date.NodeInfo{ Name: local_node.Name, PublicKey: local_node.PublicKey}
+	
 			}
 		}
-
-	case node.Titles[0]: //Рукопожатие handshake
-		var handShake date.HandShake
-		json.Unmarshal(pack.Date, &handShake) //Забираем список узлов
-
-		if handShake.Status { //Если начало рукопожатия
-			node.HandShake(pack.From, false) //Отправляем узлы обратно
-		}
-
-		for _, local_node := range handShake.Nodes { //Добавляем узлы в локальные список
-			if local_node.Name != node.Connections[local_node.Address] && local_node.Name != node.Name { //Если узел, который нам прислали был не известен, то выполняем рукопожатие с ним
-				node.HandShake(local_node.Address, true)
-			}
-			node.Connections[local_node.Address] = local_node.Name
-		}
-	}
-
 }

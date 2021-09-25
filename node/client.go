@@ -20,19 +20,19 @@ func handleClient(node *Node) { //Клиент
 		case "/network":
 			node.PrintNetwork()
 		case "/m":
-			if len(splited) < 2 {
+			if len(splited) < 3 {
 				fmt.Println("Не верное кол-во аргументов")
-				return
+				continue
 			}
-			node.SendMessageTo(splited[1], splited[2])
+			node.SendMessageTo(splited[1], []byte(splited[2]))
 		default:
-			node.SendMessageToAll(message)
+			node.SendMessageToAll([]byte(message))
 		}
 	}
 }
 
 func (node *Node) PrintNetwork() { //Ввывод всех подключений
 	for addr := range node.Connections {
-		fmt.Println(node.Connections[addr] + "|" + addr)
+		fmt.Println(node.Connections[addr].Name + "|" + addr)
 	}
 }
