@@ -15,6 +15,11 @@ func handleClient(node *Node) { //Клиент
 		switch splited[0] { //Команды клиента
 		case "/exit":
 			os.Exit(0)
+		case "/help":
+			fmt.Println("^/exit", "Выход из программы")
+			fmt.Println("^/connect", "Присоеденится к узлу. Ключи: 1)адрес(ip:port)")
+			fmt.Println("^/network", "Вывести все присоедененные узлы и собственный адрес")
+			fmt.Println("^/m", "Отправить сообщение. Ключи: 1)адрес(ip:port или имя) 2)сообщение")
 		case "/connect":
 			node.HandShake(splited[1], true)
 		case "/network":
@@ -32,7 +37,9 @@ func handleClient(node *Node) { //Клиент
 }
 
 func (node *Node) PrintNetwork() { //Ввывод всех подключений
+	fmt.Println("local address " + node.Address.IP + node.Address.Port)
 	for addr := range node.Connections {
 		fmt.Println(node.Connections[addr].Name + "|" + addr)
 	}
 }
+

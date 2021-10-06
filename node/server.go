@@ -8,7 +8,7 @@ import (
 )
 
 func handleServer(node *Node) { //Запуск сервера
-	listen, err := net.Listen("tcp", "0.0.0.0"+node.Address.Port) //Слушаем определенный порт
+	listen, err := net.Listen("tcp", node.Address.Port) //Слушаем определенный порт
 	if err != nil {                                               //если есть ошибки вызываем панику
 		panic("listen err")
 	}
@@ -60,7 +60,7 @@ func WorkingWithData(node *Node, pack date.Packege){
 				message := date.RSA_OAEP_Decrypt(pack.Date, node.PrivateKey)
 				fmt.Println(string(message)) //Выводим данные
 	
-				if string(message)[0] == '/' {
+				if string(message)[0] == '/' && len(node.Input.Cmds) != 0 {
 					message := node.Input.CommandExecute(string(message))
 					node.SendMessageTo(pack.From, []byte(message))
 				}
@@ -75,12 +75,10 @@ func WorkingWithData(node *Node, pack date.Packege){
 			}
 	
 			for _, local_node := range handShake.Nodes { //Добавляем узлы в локальные список
-				if node.Connections[local_node.Address] != nil && local_node.Name != node.Name { //Если узел, который нам прислали был не известен, то выполняем рукопожатие с ним
+				if node.Connections[local_node.Address] == nil && local_node.Name != node.Name { //Если узел, который нам прислали был не известен, то выполняем рукопожатие с ним
 					node.HandShake(local_node.Address, true)
 				}
-	
 				node.Connections[local_node.Address] = &date.NodeInfo{ Name: local_node.Name, PublicKey: local_node.PublicKey}
-	
 			}
 		}
 }

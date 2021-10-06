@@ -9,7 +9,7 @@ import (
 
 func (node *Node) HandShake(address string, status bool) { //Рукопожатие при первом подключении
 	var new_pack = date.Packege{
-		From:      node.Address.IPv4 + node.Address.Port,
+		From:      node.Address.IP + node.Address.Port,
 		To:        address,
 		Name:      node.Name,
 		PublicKey: node.PublicKey,
@@ -30,7 +30,7 @@ func (node *Node) HandShake(address string, status bool) { //Рукопожат�
 
 func (node *Node) SendMessageTo(To string, message []byte) {
 	var new_pack = date.Packege{
-		From:      node.Address.IPv4 + node.Address.Port,
+		From:      node.Address.IP + node.Address.Port,
 		Name:      node.Name,
 		PublicKey: node.PublicKey,
 		Title:     node.Titles[1],
@@ -65,7 +65,7 @@ func (node *Node) SendMessageTo(To string, message []byte) {
 
 func (node *Node) SendMessageToAll(message []byte) { //Отправка сообщений всем
 	var new_pack = date.Packege{
-		From:      node.Address.IPv4 + node.Address.Port,
+		From:      node.Address.IP + node.Address.Port,
 		Name:      node.Name,
 		PublicKey: node.PublicKey,
 		Title:     node.Titles[1],
@@ -82,11 +82,11 @@ func (node *Node) Send(pack *date.Packege) { //Отправление данны
 	conn, err := net.Dial("tcp", pack.To) //Подключаемся
 	if err != nil {                       //Если подключение не прошло, забываем о узле
 		delete(node.Connections, pack.To)
-		fmt.Println("Ошибка подключения")
+		fmt.Println("Ошибка подключения к", pack.To)
 		return
 	}
 	defer conn.Close()
 
-	byte_array, err := date.ToByteArray(*pack)
+	byte_array, _ := date.ToByteArray(*pack)
 	conn.Write(byte_array) //Отправляем
 }

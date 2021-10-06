@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -17,6 +18,7 @@ type StringOptions struct { //ну почему в go нет стандартн�
 	P4 string
 	P5 string
 }
+
 
 func InputString() string { //Чтение с консоли
 	msg, _ := bufio.NewReader(os.Stdin).ReadString('\n') //Читаем буфер
@@ -59,6 +61,7 @@ func OpenModule(dir string) ModuleInfo {
 type Input struct {
 	Modules    map[string]ModuleInfo
 	ModulePath string
+	OS string
 	Cmds       map[string]string
 	Args       map[string]string
 }
@@ -66,6 +69,7 @@ type Input struct {
 func NewInput() *Input {
 	var input = Input{
 		Modules: make(map[string]ModuleInfo),
+		OS: runtime.GOOS,
 		Args:    make(map[string]string),
 		Cmds:    make(map[string]string),
 	}
