@@ -24,6 +24,11 @@ func handleClient(node *Node) { //Клиент
 			node.HandShake(splited[1], true)
 		case "/network":
 			node.PrintNetwork()
+		case "/cmds":
+			for i,j := range node.Input.Cmds{
+				fmt.Println("file", j, "cmd", i)
+			}
+			fmt.Println(node.Input.Modules)
 		case "/m":
 			if len(splited) < 3 {
 				fmt.Println("Не верное кол-во аргументов")

@@ -67,7 +67,7 @@ func LocalIpAddress(input date.Input) (ipv4 string, ipv6 string){
 	// Получаем все доступные сетевые интерфейсы
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		panic(err)
+		panic("не нашлись интерфейсы")
 	}
  
 	for _, interf := range interfaces {
@@ -77,19 +77,21 @@ func LocalIpAddress(input date.Input) (ipv4 string, ipv6 string){
 			panic(err)
 		}
 		
+		if len(addrs) < 1{
+			continue
+		}
+
 		if input.OS == "windows"{
 			if !strings.Contains((strings.Split(addrs[1].String(), "/"))[0], "192.168"){
 				continue
-			}else{
-				return (strings.Split(addrs[1].String(), "/"))[0], (strings.Split(addrs[0].String(), "/"))[0]
 			}
+			return (strings.Split(addrs[1].String(), "/"))[0], (strings.Split(addrs[0].String(), "/"))[0]
 		}
 		if input.OS == "linux"{
 			if !strings.Contains((strings.Split(addrs[0].String(), "/"))[0], "192.168"){
 				continue
-			}else{
-				return (strings.Split(addrs[0].String(), "/"))[0], (strings.Split(addrs[1].String(), "/"))[0]
 			}
+			return (strings.Split(addrs[0].String(), "/"))[0], (strings.Split(addrs[1].String(), "/"))[0]
 		}
 	}
 	return 

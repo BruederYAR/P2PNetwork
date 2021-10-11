@@ -19,14 +19,13 @@ type StringOptions struct { //ну почему в go нет стандартн�
 	P5 string
 }
 
-
 func InputString() string { //Чтение с консоли
 	msg, _ := bufio.NewReader(os.Stdin).ReadString('\n') //Читаем буфер
 	return strings.Replace(msg, "\n", "", -1)            //Убираем переходы на следующую строку и возвращаем сообщение
 }
 
 func RequestModule(dir string, message string) ([]byte, error) {
-	cmd := exec.Command("cmd", "/C", dir)
+	cmd := returnCmd(dir)
 
 	// Чтобы вводить что-то в стандартный поток ввода другой программы, нужно получить ее pipe.
 	pipe, err := cmd.StdinPipe()
@@ -44,11 +43,22 @@ func RequestModule(dir string, message string) ([]byte, error) {
 	return output, nil
 }
 
+func returnCmd(dir string) *exec.Cmd{
+	switch runtime.GOOS{
+	case "windows":
+		return exec.Command("cmd", "/C", dir)
+	case "linux":
+		return exec.Command("./" + dir)
+	}
+	return exec.Command("./" + dir)
+}
+
 func OpenModule(dir string) ModuleInfo {
 
 	output, err := RequestModule(dir, "/cmd")
 
 	if err != nil {
+		fmt.Println(err)
 		panic("Не удаётся открыть модуль " + dir)
 	}
 
@@ -62,6 +72,7 @@ type Input struct {
 	Modules    map[string]ModuleInfo
 	ModulePath string
 	OS string
+	OSseparator string
 	Cmds       map[string]string
 	Args       map[string]string
 }
@@ -72,6 +83,12 @@ func NewInput() *Input {
 		OS: runtime.GOOS,
 		Args:    make(map[string]string),
 		Cmds:    make(map[string]string),
+	}
+
+	if input.OS == "windows"{
+		input.OSseparator = "\\"
+	}else{
+		input.OSseparator = "/"
 	}
 
 	otherArgs := os.Args[3:]
@@ -91,17 +108,36 @@ func NewInput() *Input {
 			input.ModulePath = value
 			files, err := ioutil.ReadDir(value)
 			if err != nil {
-				panic("Не удалось открыть деректорию с модулями")
+				fmt.Println("Не удалось открыть деректорию с модулями")
+				panic(err)
 			}
-			for _, f := range files { //Ищется exe
-				if strings.Split(f.Name(), ".")[1] == "exe" {
-					input.Modules[f.Name()] = OpenModule(value + "\\" + f.Name()) //Добавляем в карту модули по названию и данных о них в json
+			
+			if len(files) == 0{
+				fmt.Println("Модули в директории "+ input.ModulePath +" не обнаружены")
+			} 
 
-					for i := 0; i < len(input.Modules[f.Name()].Cmds); i++ { //Добавляем команды молуоя в общий список команд
-						input.Cmds[input.Modules[f.Name()].Cmds[i].Cmd] = f.Name()
+			if input.OS == "windows"{
+				for _, f := range files { //Ищется exe
+					if strings.Split(f.Name(), ".")[1] == "exe" {
+						input.Modules[f.Name()] = OpenModule(value + input.OSseparator + f.Name()) //Добавляем в карту модули по названию и данных о них в json
+	
+						for i := 0; i < len(input.Modules[f.Name()].Cmds); i++ { //Добавляем команды молуоя в общий список команд
+							input.Cmds[input.Modules[f.Name()].Cmds[i].Cmd] = f.Name()
+						}
+					}
+				}
+			}else{
+				for _,f := range files{
+					if !strings.Contains(f.Name(), "."){
+						input.Modules[f.Name()] = OpenModule(value + input.OSseparator + f.Name()) //Добавляем в карту модули по названию и данных о них в json
+	
+						for i := 0; i < len(input.Modules[f.Name()].Cmds); i++ { //Добавляем команды молуоя в общий список команд
+							input.Cmds[input.Modules[f.Name()].Cmds[i].Cmd] = f.Name()
+						}
 					}
 				}
 			}
+			
 			break
 		}
 	}
@@ -112,10 +148,10 @@ func NewInput() *Input {
 
 func (input *Input) CommandExecute(com string) string {
 	com = strings.TrimSpace(com)
-	answer, err := RequestModule(input.ModulePath + "\\" + input.Cmds[com], com)
-
+	answer, err := RequestModule(input.ModulePath + input.OSseparator + input.Cmds[com], com)
+	
 	if err != nil {
-		fmt.Println("Не удалось найти команду или модуль " + input.ModulePath + "\\" + input.Cmds[com])
+		fmt.Println("Не удалось найти команду или модуль " + input.ModulePath + input.OSseparator + input.Cmds[com])
 		return ""
 	}
 
