@@ -1,6 +1,7 @@
 package date
 
 type ModuleInfo struct{
+	Path string
 	Name string
 	Desk string
 	Cmds []CmdsInfo
@@ -9,4 +10,9 @@ type ModuleInfo struct{
 type CmdsInfo struct{
 	Cmd string
 	Desk string
+}
+
+type CmdRequest struct{
+	Module string
+	Cmd string
 }

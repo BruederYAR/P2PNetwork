@@ -35,9 +35,9 @@ func NewNode(address string, input *date.Input) *Node { //Создание но�
 	if len(splited) != 2 {
 		return nil
 	}
-	PrivateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	PrivateKey, _ := rsa.GenerateKey(rand.Reader, 4096)
 	newnode := &Node{
-		Titles:      map[int]string{0: "handshake", 1: "date"},
+		Titles:      map[int]string{0: "handshake", 1: "date", 2: "modcmd", 3: "cmd"},
 		Types:       map[int]string{0: "string", 1: "json"},
 		Connections: make(map[string]*date.NodeInfo),
 		Input:       input,

@@ -9,7 +9,7 @@ import (
 
 func handleServer(node *Node) { //Запуск сервера
 	listen, err := net.Listen("tcp", node.Address.Port) //Слушаем определенный порт
-	if err != nil {                                               //если есть ошибки вызываем панику
+	if err != nil {                                     //если есть ошибки вызываем панику
 		panic("listen err")
 	}
 	defer listen.Close() //Ошибок нет - закрываем прослушку
@@ -52,33 +52,58 @@ func handleConnection(node *Node, conn net.Conn) { //Читаем данные
 	WorkingWithData(node, pack)
 }
 
-func WorkingWithData(node *Node, pack date.Packege){
+func WorkingWithData(node *Node, pack date.Packege) {
 	switch pack.Title {
-		case node.Titles[1]: //date
-			switch pack.Type {
-			case node.Types[0]:
-				message := date.RSA_OAEP_Decrypt(pack.Date, node.PrivateKey)
-				fmt.Println(string(message)) //Выводим данные
-	
-				if string(message)[0] == '/' && len(node.Input.Cmds) != 0 {
-					message := node.Input.CommandExecute(string(message))
+	case node.Titles[3]: //cmd
+		switch pack.Type {
+		case node.Types[0]:
+			message := date.RSA_OAEP_Decrypt(pack.Date, node.PrivateKey)
+			switch string(message) {
+			case "/modules":
+				var message string
+				for i, j := range node.Input.Modules {
+					message = ("Module " + i + "\n" + "Desk " + j.Desk + "\n" + "Path " + j.Path)
 					node.SendMessageTo(pack.From, []byte(message))
+					for _, info := range j.Cmds {
+						message = "   " + info.Cmd + " " + info.Desk
+						node.SendMessageTo(pack.From, []byte(message))
+					}
+					
 				}
-			}
-	
-		case node.Titles[0]: //Рукопожатие handshake
-			var handShake date.HandShake
-			json.Unmarshal(pack.Date, &handShake) //Забираем список узлов
-	
-			if handShake.Status { //Если начало рукопожатия
-				node.HandShake(pack.From, false) //Отправляем узлы обратно
-			}
-	
-			for _, local_node := range handShake.Nodes { //Добавляем узлы в локальные список
-				if node.Connections[local_node.Address] == nil && local_node.Name != node.Name { //Если узел, который нам прислали был не известен, то выполняем рукопожатие с ним
-					node.HandShake(local_node.Address, true)
-				}
-				node.Connections[local_node.Address] = &date.NodeInfo{ Name: local_node.Name, PublicKey: local_node.PublicKey}
+				
 			}
 		}
+	case node.Titles[2]: //modcmd
+		switch pack.Type {
+		case node.Types[1]:
+			//Перевод сообщение в json
+			message := date.RSA_OAEP_Decrypt(pack.Date, node.PrivateKey)
+			cmdRequest := date.CmdRequest{}
+			json.Unmarshal(message, &cmdRequest)
+			send := node.Input.CommandExecute(cmdRequest.Cmd, cmdRequest.Module)
+			node.SendMessageTo(pack.From, []byte(send))
+
+		}
+	case node.Titles[1]: //date
+		switch pack.Type {
+		case node.Types[0]:
+			message := date.RSA_OAEP_Decrypt(pack.Date, node.PrivateKey)
+			fmt.Println(string(message)) //Выводим данные
+		}
+
+	case node.Titles[0]: //Рукопожатие handshake
+		var handShake date.HandShake
+		json.Unmarshal(pack.Date, &handShake) //Забираем список узлов
+
+		if handShake.Status { //Если начало рукопожатия
+			node.HandShake(pack.From, false) //Отправляем узлы обратно
+		}
+
+		for _, local_node := range handShake.Nodes { //Добавляем узлы в локальные список
+			if node.Connections[local_node.Address] == nil && local_node.Name != node.Name { //Если узел, который нам прислали был не известен, то выполняем рукопожатие с ним
+				node.HandShake(local_node.Address, true)
+			}
+			node.Connections[local_node.Address] = &date.NodeInfo{Name: local_node.Name, PublicKey: local_node.PublicKey}
+		}
+	}
 }

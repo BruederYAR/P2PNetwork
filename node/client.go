@@ -24,17 +24,32 @@ func handleClient(node *Node) { //Клиент
 			node.HandShake(splited[1], true)
 		case "/network":
 			node.PrintNetwork()
-		case "/cmds":
-			for i,j := range node.Input.Cmds{
-				fmt.Println("file", j, "cmd", i)
+		case "/modules":
+			for i,j := range node.Input.Modules{
+				fmt.Println("Module", i, "\n", "Desk", j.Desk, "\n", "Path", j.Path)
+				for _,info := range j.Cmds{
+					fmt.Println("   ", info.Cmd, info.Desk)
+				}
 			}
-			fmt.Println(node.Input.Modules)
+
 		case "/m":
 			if len(splited) < 3 {
 				fmt.Println("Не верное кол-во аргументов")
 				continue
 			}
 			node.SendMessageTo(splited[1], []byte(splited[2]))
+		case "/mm":
+			if len(splited) < 3{
+				fmt.Println("Не верное кол-во аргументов")
+				continue
+			}
+			node.ModuleRequestTo(splited[1], splited[2], splited[3])
+		case "/mc":
+			if len(splited) < 2{
+				fmt.Println("Не верное кол-во аргументов")
+				continue
+			}
+			node.CommandRequestTo(splited[1], []byte(splited[2]))
 		default:
 			node.SendMessageToAll([]byte(message))
 		}
